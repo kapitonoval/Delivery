@@ -1,16 +1,10 @@
 <?php
 
-include_once('../config.php');
-include_once('../libs/mysqli.php');
-
-
 $MANAGERS = $Delivery->getAllUsers();
-
 $content = '';
 $count = 0;
-
-if(mysql_num_rows($result) > 0){
-	    while($item = mysql_fetch_assoc($result)){
+if($result->num_rows > 0){
+    while($item = $result->fetch_assoc()){
 		   $status = ($item['status'] == 'on')? 'checked' : '' ;
 		   $status_value = ($item['status'] == 'on')? 'on' : 'off' ;
 		   $options_list = '<option>&nbsp;</option>';
@@ -168,6 +162,7 @@ if(mysql_num_rows($result) > 0){
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
+    <meta charset="utf-8">
 <link href="dostavka_new_css.css" rel="stylesheet" type="text/css">
 <link href="jQueryAssets/jquery.ui.core.min.css" rel="stylesheet" type="text/css">
 <link href="jQueryAssets/jquery.ui.theme.min.css" rel="stylesheet" type="text/css">

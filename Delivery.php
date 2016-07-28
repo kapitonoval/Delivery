@@ -22,7 +22,15 @@ class Delivery extends aplStdAJAXMethod
         // connectin to database
         $this->db();
 
-        $this->setUser(isset($_SESSION['access']['user_id'])?$_SESSION['access']['user_id']:0);
+        $this->setUserId(isset($_SESSION['access']['user_id'])?$_SESSION['access']['user_id']:0);
+
+        if ($this->getUserId() == 0 ){
+            echo '*** - '.$this->getUserId().' - '.$_SESSION['access']['user_id'];
+//            header('Location: ../');
+            exit;
+        }
+
+        $this->setUser($this->getUserId());
 
         // geting rights
         $this->setUserAccess($this->get_user_access_Database_Int($this->getUserId()));
@@ -42,8 +50,49 @@ class Delivery extends aplStdAJAXMethod
 
     }
 
+    function __destruct()
+    {
+//        $this->db();
+//        $this->mysqli->close();
+    }
+
     public function printArray($arr){
         return $this->printArr($arr);
+    }
+
+    /**
+     * окно с деталями
+     */
+    protected function showDetails_AJAX(){
+        $query = "SELECT*FROM `".DOSTAVKA_BIG_ROW_TBL."` WHERE `id` = '".(int)$_GET['id']."'";
+        $result = $this->mysqli->query($query) or die($this->mysqli->error);
+
+        $targetRows = [];
+        if($result->num_rows > 0){
+            while($row = $result->fetch_assoc()) {
+                $targetRows = $row;
+            }
+        }
+
+        $echo1 = '{@1}'.nl2br($targetRows['target']);
+
+        $echo2 = '{@2}';
+        $echo3 = '{@3}'.nl2br($targetRows['docs']);
+        $echo3 .= '{@4}'.nl2br($targetRows['date_delivery']);
+        $echo3 .= '{@5}'.nl2br($targetRows['contacts']);
+
+        $query = "SELECT * FROM `".DOSTAVKA_SMALL_ROW_TBL."` inner join `os__manager_list` AS `omml` ON `karta_kurijera_task`.`id_manager` = `omml`.`id`   WHERE `karta_kurijera_task`.`id_parent`='".(int)$_GET['id']."'";
+
+        $result = $this->mysqli->query($query) or die($this->mysqli->error);
+        $i=1;
+        if($result->num_rows > 0){
+            while($row = $result->fetch_assoc()){
+                $echo2 .= $i.'). '.$row['actions'].' <span style="color:grey">'.$row['name'].' '.substr($row['last_name'], 0, 2).'.</span><br/>';
+                $i++;
+            }
+        }
+        echo $echo1.$echo2.$echo3;
+        exit;
     }
 
     /**
@@ -86,23 +135,7 @@ class Delivery extends aplStdAJAXMethod
         switch($address_data){
             case 'suppliers':
 
-//                $query = "
-//				SELECT `om_sl`.`id` , `om_sl`.`nickName` , `om_sl`.`addres` , `om_sl`.`phone` , `om_rscf`.`name` , `om_rscf`.`phone` AS `cf_phone`
-//				FROM `os__supplier_list` AS `om_sl`
-//				INNER JOIN `os__supplier_cont_faces_relation` AS `om_rscf` ON `om_sl`.`id` = `om_rscf`.`supplier_id`
-//				ORDER BY `om_sl`.`nickName`";
 //
-//                // echo '*1*';
-//                $result = $this->mysqli->query($query) or die($this->mysqli->error);
-//
-//                echo '<div class="tableAddress">';
-//                if ($result->num_rows > 0) {
-//                    while ($item = $result->fetch_assoc()) {
-//                        echo '<div class="row2" onClick="getThisAddress(this,\''.$id_row.'\')"><div class="cell2" data-id="'.$item['id'].'">'.$item['nickName'].'</div><div class="cell2">'.$item['addres'].' общ. тел.: '.$item['phone'].'<br>'.$item['name'].' '.$item['cf_phone'].'</div></div>';
-//                    }
-//                }
-//
-//                echo '</div>';
                 echo '<form id="get_client_addres_for_new_row">';
 
                 unset($_POST['name']);
@@ -140,7 +173,7 @@ class Delivery extends aplStdAJAXMethod
                 }
 
                 echo '<input type="hidden" name="client_id" value="'.$supplierData[0]['id'].'">';
-                echo '<input type="hidden" name="AJAX" value="get_client_addres_for_new_row">';
+                echo '<input type="hidden" name="AJAX" value="get_supplier_addres_for_new_row">';
 
                 echo '</div>';
                 // echo '*2*';
@@ -225,7 +258,7 @@ class Delivery extends aplStdAJAXMethod
     }
 
     /**
-     * получение списка клиентов
+     * получение списка контактов для выбранного клиента
      */
     protected function get_client_addres_for_new_row_AJAX()
     {
@@ -262,7 +295,7 @@ class Delivery extends aplStdAJAXMethod
         }
 
         // получаем телефоны по клиенту
-        $query = "SELECT * FROM `".CLIENT_CONT_INFO."` WHERE parent_id = '".$_POST['client_id']."' AND `table` = 'CLIENTS_TBL' AND type = 'phone' ";
+        $query = "SELECT * FROM `".CONT_FACES_CONTACT_INFO_TBL."` WHERE parent_id = '".$_POST['client_id']."' AND `table` = 'CLIENTS_TBL' AND type = 'phone' ";
         $result = $this->mysqli->query($query) or die($this->mysqli->error);
         $client['phone'] =  array();
         if ($result->num_rows > 0) {
@@ -287,7 +320,7 @@ class Delivery extends aplStdAJAXMethod
 
         if(count($cont_face_arr) > 0){
             // получаем телефоны по клиенту
-            $query = "SELECT * FROM `".CLIENT_CONT_INFO."` WHERE parent_id IN ('".implode("','", $cont_face_arr)."') AND `table` = 'CLIENT_CONT_FACES_TBL' AND type = 'phone' ";
+            $query = "SELECT * FROM `".CONT_FACES_CONTACT_INFO_TBL."` WHERE parent_id IN ('".implode("','", $cont_face_arr)."') AND `table` = 'CLIENT_CONT_FACES_TBL' AND type = 'phone' ";
             $result = $this->mysqli->query($query) or die($this->mysqli->error);
             $cont_face_phone_arr =  array();
             if ($result->num_rows > 0) {
@@ -373,6 +406,158 @@ class Delivery extends aplStdAJAXMethod
         echo '<input type="hidden" name="client_id" value="'.$client_id.'">';
         echo '<input type="hidden" name="AJAX" value="get_client_addres_for_new_row">';
         echo '</form>';
+        exit;
+    }
+    /**
+     * получение списка контактов для выбранного поставщика
+     */
+    protected function get_supplier_addres_for_new_row_AJAX()
+    {
+        echo '<form id="get_client_address">';
+        unset($_POST['AJAX']);
+        foreach ($_POST as $key => $value) {
+            echo '<input type="hidden" name="'.$key.'" value="'.$value.'">';
+        }
+        // CLIENT_ADRES_TBL
+
+        $client_id = $_POST['client_id'];
+
+        // получаем адреса по клиенту
+        $query = "SELECT * FROM `".SUPPLIERS_TBL."` WHERE id = '".$client_id."'";
+        $result = $this->mysqli->query($query) or die($this->mysqli->error);
+        $client =  array();
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                // запоминаем id клиентов
+                $client = $row;
+            }
+        }
+
+
+        // получаем адреса по клиенту
+        $query = "SELECT * FROM `".CLIENT_ADRES_TBL."` WHERE parent_id = '".$_POST['client_id']."' AND `table_name` = 'SUPPLIERS_TBL'";
+        $result = $this->mysqli->query($query) or die($this->mysqli->error);
+        $client['adress'] =  array();
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                // запоминаем id клиентов
+                $client['adress'][] = $row;
+            }
+        }
+
+        // получаем телефоны по клиенту
+        $query = "SELECT * FROM `".CONT_FACES_CONTACT_INFO_TBL."` WHERE parent_id = '".$_POST['client_id']."' AND `table` = 'SUPPLIERS_TBL' AND type = 'phone' ";
+        $result = $this->mysqli->query($query) or die($this->mysqli->error);
+        $client['phone'] =  array();
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                // запоминаем id клиентов
+                $client['phone'][] = $row;
+            }
+        }
+
+        // получаем контактные лица по клиенту
+        $query = "SELECT * FROM `".SUPPLIERS_CONT_FACES_TBL."` WHERE supplier_id = '".$_POST['client_id']."'";
+        $result = $this->mysqli->query($query) or die($this->mysqli->error);
+        $cont_face_arr =  array();
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                // запоминаем конт. лица
+                $client['cont_face'][$row['id']] = $row;
+                // запоминаем id конт. лиц
+                $cont_face_arr[$row['id']] = $row['id'];
+            }
+        }
+
+        if(count($cont_face_arr) > 0){
+            // получаем телефоны по клиенту
+            $query = "SELECT * FROM `".CONT_FACES_CONTACT_INFO_TBL."` WHERE parent_id IN ('".implode("','", $cont_face_arr)."') AND `table` = 'SUPPLIERS_CONT_FACES_TBL' AND type = 'phone' ";
+            $result = $this->mysqli->query($query) or die($this->mysqli->error);
+            $cont_face_phone_arr =  array();
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    // запоминаем id клиентов
+                    $cont_face_phone_arr[$row['parent_id']][] = $row;
+                }
+            }
+
+            // echo '<pre>';
+            // print_r($cont_face_phone_arr);
+            // echo '<pre>';
+            foreach ($client['cont_face'] as $key => $value) {
+                $client['cont_face'][$key]['phone'] = $cont_face_phone_arr[$key];
+            }
+
+        }
+
+
+        echo '<div class="tableAddress" style="display: table;">';
+        if(count($client['adress']) > 0){
+            // foreach ($variable as $key => $value) {
+            // 	# code...
+            // }
+            foreach($client['adress'] as $item){
+                echo '<div class="row2" onClick="getThisAddress(this,\''.$_POST['id_row'].'\')">
+
+					<div class="cell2" data-id="'.$client['id'].'">'.$client['nickName'].'</div><div class="cell2">';
+                // вывод адреса
+                echo ($item['postal_code']>0)?$item['postal_code'].', ':'';
+                echo ($item['city']!="")?$item['city'].', ':'';
+                echo ($item['street']!="")?$item['street'].', ':'';
+                echo ($item['house_number']>0)?'дом '.$item['house_number'].', ':'';
+                echo ($item['bilding']>0)?'строение '.$item['bilding'].'':'';
+                echo ($item['korpus']>0)?'/'.$item['korpus'].',  ':'';
+                echo ($item['liter']!="")?'/'.$item['liter'].', ':'';
+                echo ($item['office']!="")?'оф. '.$item['office'].'<br/>':'';
+                echo ($item['note']!="")?$item['note'].'<br/>':'';
+                // вывод телефонов
+                if(count($client['phone']) > 0){
+                    foreach ($client['phone'] as $value) {
+                        echo ($value['contact']!="")?$value['contact'].'':'';
+                        echo ($value['dop_phone']!="")?' доб. '. $value['dop_phone'].'<br/>':'';
+                    }
+                }
+
+                // вывод адресов
+                if(isset($client['cont_face']) && count($client['cont_face']) > 0){
+                    echo '<br>Контактные лица:';
+
+                    foreach ($client['cont_face'] as $cont_face) {
+                        $html = '<br>';
+                        $html .= ($cont_face['name']!="")?$cont_face['name']:'';
+                        $html .= ($cont_face['last_name']!="")?' '.$cont_face['last_name']:'';
+                        $html .= ($cont_face['surname']!="")?' '.$cont_face['surname']:'';
+                        $html .= ($cont_face['position']!="")?' ('.$cont_face['position'].')':'';
+                        $html .= ($html != '')?'':'';
+                        echo $html;
+                        if(is_array($cont_face['phone']) && count($cont_face['phone']) >0){
+                            // echo '<pre>';
+                            // print_r($cont_face['phone']);
+                            // echo '<pre>';
+                            foreach ($cont_face['phone'] as $phones) {
+                                $phone_html = '<br>';
+                                $phone_html .= ($phones['contact']!="")?'тел.: '.$phones['contact'].'':'';
+                                $phone_html .= ($phones['contact']!="" && $phones['dop_phone']!="")?' доб. '. $phones['dop_phone'].'':'';
+                                echo ($phone_html!='<br>')?$phone_html:'';
+                            }
+                        }
+                    }
+
+
+
+
+                    // if($item['phone']!=""){echo 'тел.: '.$item['phone'].'<br/> ';}
+                    echo '</div></div>';
+                }
+            }
+        }else{
+            echo 'У поставщика "'.$client['nickName'].'" не заведён адрес.';
+        }
+        echo '</div>';
+        echo '<input type="hidden" name="client_id" value="'.$client_id.'">';
+        echo '<input type="hidden" name="AJAX" value="get_client_addres_for_new_row">';
+        echo '</form>';
+        exit;
     }
 
     /**
@@ -409,7 +594,7 @@ class Delivery extends aplStdAJAXMethod
         $id =  trim($_POST['id_kurier']);
         $query = "UPDATE `".DOSTAVKA_BIG_ROW_TBL."` SET `disable_editing` = '".$this->getUserId()."' WHERE `id` = '".(int)$id."'";
         $result = $this->mysqli->query($query) or die($this->mysqli->error);
-        echo $this->mysqli->insert_id;
+//        echo $this->mysqli->insert_id;
 
         echo "OK";
         exit;

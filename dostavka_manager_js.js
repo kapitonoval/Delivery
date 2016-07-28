@@ -8,7 +8,7 @@ $(document).on('click', '#get_client_addres_for_new_row .checkThisClient', funct
 
 	// $('#adressOfTheRow').fadeOut(300).remove();
 	// $('#bg').fadeOut(300).css({'background':'white'});
-	$.post('ajax_func.php', serialize, function(data, textStatus, xhr) {
+	$.post('', serialize, function(data, textStatus, xhr) {
 		$('#adressOfTheRow').html(data);//999999
 		// $('.tableAddress').delay(200).fadeIn(200);
 	});

@@ -268,9 +268,9 @@ function selectTheAdresData(i,id_row){
 	var he = $(window).height()-60;
 	var user_id = $('#userId').val();
 	var crops = $('#crops').val();
-	$.post("ajax_func.php",
+	$.post("",
 		{ 
-		name: 'queryForAddress',
+		AJAX: 'queryForAddress',
 		address_data: address_data,//поставщик или клиент
 		user_id:  user_id,
 		crops: crops,
@@ -664,7 +664,7 @@ $('textarea').autogrow();
 // показать детали
 function show_details(mouse_event,id){
 	   var request = HTTP.newRequest();
-	   var url = "index.php?show_details=" + id;
+	   var url = "index.php?AJAX=showDetails&id=" + id;
 	  
 	   // производим запрос
 	   request.open("GET", url, true);

@@ -1,15 +1,10 @@
-﻿<?php
-
-include_once('../config.php');
-include_once('../libs/mysqli.php');
+<?php
 
 $MANAGERS = $Delivery->getAllUsers();
-
 $content = '';
 $count = 0;
-
-if(mysql_num_rows($result) > 0){
-	    while($item = mysql_fetch_assoc($result)){
+if($result->num_rows > 0){
+	while($item = $result->fetch_assoc()){
 		   $status = ($item['status'] == 'on')? 'checked' : '' ;
 		   $status_value = ($item['status'] == 'on')? 'on' : 'off' ;
 		   $options_list = '<option>&nbsp;</option>';

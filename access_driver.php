@@ -1,6 +1,11 @@
-﻿<?php
-if(mysql_num_rows($result) > 0){
-	    while($item = mysql_fetch_assoc($result)){
+<?php
+
+
+$content = '';
+$count = 0;
+if($result->num_rows > 0){
+    while($item = $result->fetch_assoc()){
+
 		   $status = ($item['status'] == 'on')? 'checked' : '' ;
 		   $status_value = ($item['status'] == 'on')? 'on' : 'off' ;
 		   $options_list = '<option>&nbsp;</option>';

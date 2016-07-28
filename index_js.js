@@ -89,7 +89,7 @@ function submit_data(id,page){
 // показать детали
 function show_details(mouse_event,id){
 	   var request = HTTP.newRequest();
-	   var url = "index.php?show_details=" + id;
+	   var url = "index.php?AJAX=showDetails&id=" + id;
 	  
 	   // производим запрос
 	   request.open("GET", url, true);
