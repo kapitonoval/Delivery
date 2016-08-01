@@ -1,8 +1,13 @@
 <?php
 
-$MANAGERS = $Delivery->getAllUsers();
+
+
 $content = '';
 $count = 0;
+
+$MANAGERS = $Delivery->getAllUsers();
+
+
 if($result->num_rows > 0){
     while($item = $result->fetch_assoc()){
 		   $status = ($item['status'] == 'on')? 'checked' : '' ;

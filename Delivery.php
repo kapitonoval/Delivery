@@ -118,6 +118,9 @@ class Delivery extends aplStdAJAXMethod
     {
         $this->user = $user;
     }
+    /**
+     *
+     */
 
     /**
      * запрос таблицы адресов
@@ -199,7 +202,7 @@ class Delivery extends aplStdAJAXMethod
                     $query_get_relate = "SELECT * FROM `".RELATE_CLIENT_MANAGER_TBL."` ";
                     $query_get_relate .= " WHERE `manager_id`= $amanager_id ";
 
-                    $result = $mysqli->query($query_get_relate) or die($mysqli->error);
+                    $result = $this->mysqli->query($query_get_relate) or die($this->mysqli->error);
 
                     $clients_id =  array();
                     $i = 0;
